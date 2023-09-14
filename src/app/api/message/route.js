@@ -5,14 +5,29 @@ import { NextResponse } from "next/server";
 
 export const GET = async (request) => {
   readDB();
+  const roomId = request.nextUrl.searchParams.get("roomId");
 
-  // return NextResponse.json(
-  //   {
-  //     ok: false,
-  //     message: `Room is not found`,
-  //   },
-  //   { status: 404 }
-  // );
+  
+
+  const courseNoList = [];
+  for (const enroll of DB.messages) {
+    if (enroll.roomId === roomId) {
+      courseNoList.push(enroll.roomId);
+    }else{
+    //   return NextResponse.json(
+    // {
+    //   ok: false,
+    //   message: `Room is not found`,
+    // },
+    // { status: 404 }
+    //   );
+    }
+  }
+
+  return NextResponse.json({
+    ok: true,
+    courseNoList,
+  });
 };
 
 export const POST = async (request) => {
@@ -38,25 +53,43 @@ export const POST = async (request) => {
 };
 
 export const DELETE = async (request) => {
+  let role = null;
+  let messageId = null;
   const payload = checkToken();
-
-  // return NextResponse.json(
-  //   {
-  //     ok: false,
-  //     message: "Invalid token",
-  //   },
-  //   { status: 401 }
-  // );
-
+  if(!payload){
+  return NextResponse.json(
+    {
+      ok: false,
+      message: "Invalid token",
+    },
+    { status: 401 }
+  );
+    }
   readDB();
 
-  // return NextResponse.json(
-  //   {
-  //     ok: false,
-  //     message: "Message is not found",
-  //   },
-  //   { status: 404 }
-  // );
+  role = payload.role;
+  messageId = payload.messageId;
+
+  if(role === "SUPER_ADMIN"){
+    const body = await request.json();
+    const { messageId } = body;
+
+
+  const foundIndex = DB.messages.findIndex(
+    (x) => x.messageId === messageId
+  );
+  if (foundIndex === -1) {
+      return NextResponse.json(
+    {
+      ok: false,
+      message: "Message is not found",
+    },
+    { status: 404 }
+  );
+
+  }
+
+  DB.messages.splice(foundIndex, 1);
 
   writeDB();
 
@@ -64,4 +97,5 @@ export const DELETE = async (request) => {
     ok: true,
     message: "Message has been deleted",
   });
+  }
 };
